@@ -4,13 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "cd src && nodemon api.js",
-    "test": "cd src && nodemon test.js"
+    "node_0": "nodemon src/networkNode.js 3000",
+    "node_1": "nodemon src/networkNode.js 3001",
+    "node_2": "nodemon src/networkNode.js 3002",
+    "node_3": "nodemon src/networkNode.js 3003",
+    "test": "nodemon src/test.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
     "sha256": "^0.2.0",
     "uuid": "^3.3.2"
   }
