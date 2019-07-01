@@ -28,6 +28,27 @@ app.post('/transaction', (req, res) => {
     res.send(`Block will be added to ${nextBlock}`)
 });
 
+app.post('/transaction/broadcast', (req, res) => {
+    const newTransaction = bitcoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
+    bitcoin.addTransactionToPendingTransactions(newTransaction);
+    const requestPromises = [];
+    bitcoin.networkNodes.forEach(networkNodeUrl => {
+        const requestOptions = {
+            uri: `${networkNodeUrl}/transaction`,
+            method: 'POST',
+            body: newTransaction,
+            json: true
+        }
+
+        requestPromises.push(rp(requestOptions));
+    })
+
+    Promise.all(requestPromises)
+    .then(_ => {
+        res.send('Transaction broadcasted to the network successfully');
+    })
+})
+
 app.get('/mine', (req, res) => {
     const lastBlock = bitcoin.getLastBlock();
     const previousBlockHash = lastBlock.hash;
