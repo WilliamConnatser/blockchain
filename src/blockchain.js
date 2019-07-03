@@ -104,7 +104,7 @@ Blockchain.prototype.chainIsValid = function (blockchain) {
 
 Blockchain.prototype.getBlock = function (blockHash) {
     const matches = this.chain.filter(block => block.hash === blockHash);
-    if (matches.length = 0) return null;
+    if (matches.length === 0) return null;
     else return matches;
 }
 

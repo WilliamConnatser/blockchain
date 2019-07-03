@@ -242,7 +242,7 @@ app.get('/consensus', (req, res) => {
 
 app.get('/block/:blockHash', (req, res) => {
     const block = bitcoin.getBlock(req.params.blockHash);
-
+    
     if (block) {
         res.send({
             block
