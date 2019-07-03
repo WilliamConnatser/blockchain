@@ -240,4 +240,26 @@ app.get('/consensus', (req, res) => {
         });
 });
 
+app.get('/block/:blockHash', (req, res) => {
+    const block = bitcoin.getBlock(req.params.blockHash);
+
+    if (block) {
+        res.send({
+            block
+        });
+    } else {
+        res.send({
+            message: 'No block found matching this hash'
+        });
+    }
+});
+
+app.get('/transaction/:transactionId', (req, res) => {
+
+});
+
+app.get('/address/:address', (req, res) => {
+
+});
+
 app.listen(port, () => console.log(`\n\n \u{1F680} \u{1F680} \u{1F680} API live on http://localhost:${port}`))

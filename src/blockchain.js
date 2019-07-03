@@ -97,9 +97,15 @@ Blockchain.prototype.chainIsValid = function (blockchain) {
     const correctHash = genesisBlock.hash === '0';
     const correctTransactions = genesisBlock.transactions.length === 0;
 
-    if(!correctNonce || !correctPreviousBlockHash || !correctHash || !correctTransactions) validChain = false;
+    if (!correctNonce || !correctPreviousBlockHash || !correctHash || !correctTransactions) validChain = false;
 
     return validChain;
+}
+
+Blockchain.prototype.getBlock = function (blockHash) {
+    const matches = this.chain.filter(block => block.hash === blockHash);
+    if (matches.length = 0) return null;
+    else return matches;
 }
 
 module.exports = Blockchain;
