@@ -255,7 +255,17 @@ app.get('/block/:blockHash', (req, res) => {
 });
 
 app.get('/transaction/:transactionId', (req, res) => {
-
+    const data = bitcoin.getTransaction(req.params.transactionId);
+    console.log(data)
+    if(data.transaction) {
+        res.send({
+            ...data
+        });
+    } else {
+        res.send({
+            message: 'No transaction found matching this ID'
+        });
+    }
 });
 
 app.get('/address/:address', (req, res) => {
