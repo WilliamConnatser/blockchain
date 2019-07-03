@@ -242,7 +242,7 @@ app.get('/consensus', (req, res) => {
 
 app.get('/block/:blockHash', (req, res) => {
     const block = bitcoin.getBlock(req.params.blockHash);
-    
+
     if (block) {
         res.send({
             block
@@ -256,8 +256,8 @@ app.get('/block/:blockHash', (req, res) => {
 
 app.get('/transaction/:transactionId', (req, res) => {
     const data = bitcoin.getTransaction(req.params.transactionId);
-    console.log(data)
-    if(data.transaction) {
+
+    if (data.transaction) {
         res.send({
             ...data
         });
@@ -269,7 +269,10 @@ app.get('/transaction/:transactionId', (req, res) => {
 });
 
 app.get('/address/:address', (req, res) => {
-
+    const data = bitcoin.getAddressData(req.params.address);
+    res.send({
+        ...data
+    });
 });
 
 app.listen(port, () => console.log(`\n\n \u{1F680} \u{1F680} \u{1F680} API live on http://localhost:${port}`))
