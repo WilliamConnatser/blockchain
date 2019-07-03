@@ -1,27 +1,38 @@
+//request-promise package is used to make API calls to other nodes
+const rp = require('request-promise');
+
+//Setup basic express server
 const express = require('express');
 const app = express();
 app.use(express.json());
-const rp = require('request-promise');
 
 //Generates a unique id
 const uuid = require('uuid/v1');
 
-//Get the port from the command
+//Get the port the node is running on
+//This allows you to spin up multiple nodes on localhost for testing
 const port = process.argv[2];
 
+//Generate a random address for this node
 const nodeAddress = uuid().split('-').join('');
 
+//Create a new Blockchain object
 const Blockchain = require('./blockchain');
 const bitcoin = new Blockchain;
 
+//Check if node is alive
 app.get('/', (req, res) => {
-    res.send('hello world');
+    res.send(`Your node is alive on ${port} using the address ${nodeAddress}`);
 });
 
+//Get the current blockchain object
+//Includes pending transactions, the blockchain, and network node addresses
 app.get('/blockchain', (req, res) => {
     res.send(bitcoin)
 });
 
+//Post a transaction locally to this node only
+//This is mainly only used by POST /transaction/broadcast
 app.post('/transaction', (req, res) => {
     const newTransaction = req.body;
     if (!bitcoin.pendingTransactions.find(transaction => transaction.transactionId === newTransaction.transactionId))
@@ -31,6 +42,7 @@ app.post('/transaction', (req, res) => {
     })
 });
 
+//Post a transaction to all nodes in the network
 app.post('/transaction/broadcast', (req, res) => {
     const newTransaction = bitcoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
     bitcoin.addTransactionToPendingTransactions(newTransaction);
@@ -52,6 +64,7 @@ app.post('/transaction/broadcast', (req, res) => {
         })
 })
 
+//Mine a block and broadcast it to the network
 app.get('/mine', (req, res) => {
     const lastBlock = bitcoin.getLastBlock();
     const previousBlockHash = lastBlock.hash;
@@ -100,6 +113,8 @@ app.get('/mine', (req, res) => {
         });
 });
 
+//Mainly only used by GET /mine
+//When someone mines a new block this endpoint is used to broadcast it to the network
 app.post('/receive-new-block', (req, res) => {
     const newBlock = req.body.newBlock;
     const lastBlock = bitcoin.getLastBlock();
@@ -121,6 +136,8 @@ app.post('/receive-new-block', (req, res) => {
 
 });
 
+//Use another node as a relay to broadcast your node's existence to all nodes they are connected to
+//Use the response to hit POST /register-nodes-bulk on this node to connect to all of those nodes locally
 app.post('/register-and-broadcast-node', (req, res) => {
     const newNodeUrl = req.body.newNodeUrl;
 
@@ -164,6 +181,8 @@ app.post('/register-and-broadcast-node', (req, res) => {
         })
 });
 
+//Mainly only used by POST /register-and-broadcast-node
+//Registers a node locally with your node only
 app.post('/register-node', (req, res) => {
     const newNodeUrl = req.body.newNodeUrl;
     const notPresent = !bitcoin.networkNodes.includes(newNodeUrl);
@@ -176,6 +195,8 @@ app.post('/register-node', (req, res) => {
     });
 });
 
+//Mainly only used by POST /register-and-broadcast-node
+//Used as a callback to connect your node to all nodes that they are connected to
 app.post('/register-nodes-bulk', (req, res) => {
     const allNetworkNodes = req.body.allNetworkNodes;
     allNetworkNodes.forEach(newNodeUrl => {
@@ -189,6 +210,8 @@ app.post('/register-nodes-bulk', (req, res) => {
     });
 });
 
+//Requests all node's copy of the blockchain and looks for a longer valid chain
+//If one is found then your local copy of the blockchain is replaced
 app.get('/consensus', (req, res) => {
 
     const requestPromises = [];
@@ -240,6 +263,7 @@ app.get('/consensus', (req, res) => {
         });
 });
 
+//Get a block from its hash
 app.get('/block/:blockHash', (req, res) => {
     const block = bitcoin.getBlock(req.params.blockHash);
 
@@ -254,6 +278,7 @@ app.get('/block/:blockHash', (req, res) => {
     }
 });
 
+//Get a transaction from its ID
 app.get('/transaction/:transactionId', (req, res) => {
     const data = bitcoin.getTransaction(req.params.transactionId);
 
@@ -268,6 +293,7 @@ app.get('/transaction/:transactionId', (req, res) => {
     }
 });
 
+//Get an address' information
 app.get('/address/:address', (req, res) => {
     const data = bitcoin.getAddressData(req.params.address);
     res.send({
