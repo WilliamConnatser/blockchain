@@ -68,47 +68,45 @@ app.get('/mine', (req, res) => {
         const requestOptions = {
             uri: networkNodeUrl + '/receive-new-block',
             method: 'POST',
-            body: { newBlock },
+            body: {
+                newBlock
+            },
             json: true
         }
-
-        console.log('okk')
 
         requestPromises.push(rp(requestOptions));
     });
 
     Promise.all(requestPromises)
-    .then(_ => {
-        const requestOptions = {
-            uri: bitcoin.currentNodeUrl + '/transaction/broadcast',
-            method: 'POST',
-            body: {
-                amount: 12.5,
-                sender: "00",
-                recipient: nodeAddress
-            },
-            json: true
-        }
+        .then(_ => {
+            const requestOptions = {
+                uri: bitcoin.currentNodeUrl + '/transaction/broadcast',
+                method: 'POST',
+                body: {
+                    amount: 12.5,
+                    sender: "00",
+                    recipient: nodeAddress
+                },
+                json: true
+            }
 
-        console.log('umm')
-        return rp(requestOptions);
+            return rp(requestOptions);
 
-    }).then(msg => {
-        console.log('res',msg)
-        res.send({
-            message: "New Block Mined Successfully!",
-            data: newBlock
+        }).then(msg => {
+            res.send({
+                message: "New Block Mined Successfully!",
+                data: newBlock
+            });
         });
-    });
 });
 
-app.post('/receive-new-block',(req,res) => {
+app.post('/receive-new-block', (req, res) => {
     const newBlock = req.body.newBlock;
     const lastBlock = bitcoin.getLastBlock();
     const correctHash = lastBlock.hash === newBlock.previousBlockHash;
     const correctIndex = lastBlock.blockHeight + 1 === newBlock.blockHeight;
-    console.log(correctHash, correctIndex)
-    if(correctHash && correctIndex) {
+
+    if (correctHash && correctIndex) {
         bitcoin.chain.push(newBlock);
         bitcoin.pendingTransactions = [];
         res.send({
@@ -189,6 +187,57 @@ app.post('/register-nodes-bulk', (req, res) => {
     res.send({
         message: 'Bulk Registration Successful'
     });
+});
+
+app.get('/consensus', (req, res) => {
+
+    const requestPromises = [];
+
+    bitcoin.networkNodes.forEach(networkNodeUrl => {
+        const requestOptions = {
+            uri: networkNodeUrl + '/blockchain',
+            method: 'GET',
+            json: true
+        }
+
+        requestPromises.push(rp(requestOptions));
+    });
+
+    Promise.all(requestPromises)
+        .then(blockchains => {
+            const currentChainLength = bitcoin.chain.length;
+            let maxChainLength = currentChainLength;
+            let newLongestChain = null;
+            let newPendingTransactions = null;
+
+            blockchains.forEach(blockchain => {
+
+                //If there's a longer valid chain
+                if (blockchain.chain.length > maxChainLength && bitcoin.chainIsValid(blockchain.chain)) {
+
+                    //Update these variables
+                    maxChainLength = blockchain.chain.length;
+                    newLongestChain = blockchain.chain;
+                    newPendingTransactions = blockchain.pendingTransactions;
+                }
+            });
+
+            if (newLongestChain) {
+
+                bitcoin.chain = newLongestChain;
+                bitcoin.newPendingTransactions = newPendingTransactions;
+
+                res.send({
+                    message: 'The chain was replaced with a valid longer chain',
+                    chain: bitcoin.chain
+                });
+            } else {
+                res.send({
+                    message: 'The chain was not replaced- a valid longer chain was not found',
+                    chain: bitcoin.chain
+                });
+            }
+        });
 });
 
 app.listen(port, () => console.log(`\n\n \u{1F680} \u{1F680} \u{1F680} API live on http://localhost:${port}`))
